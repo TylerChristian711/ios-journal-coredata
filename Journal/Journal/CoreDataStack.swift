@@ -19,6 +19,7 @@ class CoreDataStack {
                 fatalError("Failed to load persistent stores: \(error.localizedDescription)")
             }
         }
+        container.viewContext.automaticallyMergesChangesFromParent = true 
         return container
     }()
     

@@ -39,7 +39,7 @@ class EntryController {
             }
             representation.identifier = identifire
             entry.identifier = identifire
-            try saveToPersistentStore()
+            try CoreDataStack.shared.save()
             request.httpBody = try encoder.encode(representation)
         } catch let encodeError {
             print("Error encoding entry: \(encodeError.localizedDescription)")
@@ -65,7 +65,7 @@ class EntryController {
     func createEntry(title: String, bodyText: String, mood:String) {
         let entry = Entry(title: title, bodyText: bodyText, mood: mood)
         put(entry: entry)
-        try? saveToPersistentStore()
+        try? CoreDataStack.shared.save()
     }
     
     func update(entry: Entry, title: String, bodyText: String, mood: String) {
@@ -74,7 +74,7 @@ class EntryController {
         entry.timestamp = Date()
         entry.mood = mood
         put(entry: entry)
-        try? saveToPersistentStore()
+        try? CoreDataStack.shared.save()
     }
     
     func delete(entry: Entry) {
@@ -122,7 +122,9 @@ class EntryController {
         var entriesToCreate = representationsByID
         let fetchRequest: NSFetchRequest<Entry> = Entry.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "identifier IN %@", iddentifiersToFetch)
-        let moc = CoreDataStack.shared.mainContext
+        let moc = CoreDataStack.shared.container.newBackgroundContext()
+        
+        moc.perform {
         do {
             let exsistingEntries = try moc.fetch(fetchRequest)
             
@@ -131,16 +133,18 @@ class EntryController {
                     let representation = representationsByID[id] else { continue }
                 self.update(entry: entry, with: representation)
                 entriesToCreate.removeValue(forKey: id)
-               try? saveToPersistentStore()
+                
             }
             
             for representation in entriesToCreate.values {
                 Entry(entryRepresentation: representation, context: moc)
-                try saveToPersistentStore()
+               
             }
         } catch let fetchError {
             print("Error fetching entries for identifiers: \(fetchError.localizedDescription)")
         }
+      }
+        try CoreDataStack.shared.save(context: moc)
     }
     
     func fetchEntriesFromServer(completion: @escaping CompletionHandler = {_ in }) {
