@@ -60,10 +60,7 @@ class EntryController {
         }.resume()
     }
     
-    func saveToPersistentStore() throws {
-        let moc = CoreDataStack.shared.mainContext
-        try moc.save()
-    }
+
     
     func createEntry(title: String, bodyText: String, mood:String) {
         let entry = Entry(title: title, bodyText: bodyText, mood: mood)
